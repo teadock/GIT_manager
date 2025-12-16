@@ -1,0 +1,23 @@
+# GitHub Repository Manager - No Python dependencies!
+# All required libraries are part of Python standard library
+
+# Standard library modules used:
+# - tkinter (GUI framework)
+# - subprocess (run GitHub CLI commands)
+# - json (parse API responses)
+# - os (environment variables)
+# - datetime (format timestamps)
+
+# External dependency (not Python):
+# - GitHub CLI (gh) - Install separately:
+#   macOS: brew install gh
+#   Windows: winget install GitHub.cli
+#   Linux: See https://cli.github.com/
+
+# Python version requirement:
+# Python >= 3.8
+
+# Note: Tkinter comes with Python on macOS and Windows.
+# On Linux, install separately:
+#   Ubuntu/Debian: sudo apt install python3-tk
+#   Fedora/RHEL: sudo dnf install python3-tkinter
