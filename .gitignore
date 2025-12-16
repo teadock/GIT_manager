@@ -22,7 +22,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -36,12 +35,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-venv/
-ENV/
-env/
-
-# PyInstaller
+# PyInstaller build files (but keep the final exe)
 *.manifest
 *.spec
 
