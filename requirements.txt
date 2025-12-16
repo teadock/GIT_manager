@@ -1,12 +1,22 @@
-# GitHub Repository Manager - No Python dependencies!
-# All required libraries are part of Python standard library
+# GitHub Repository Manager - Requirements
 
-# Standard library modules used:
-# - tkinter (GUI framework)
-# - subprocess (run GitHub CLI commands)
-# - json (parse API responses)
-# - os (environment variables)
-# - datetime (format timestamps)
+# No Python packages required!
+# All dependencies are in Python's standard library:
+# - tkinter (GUI framework - usually pre-installed)
+# - subprocess (for running gh commands)
+# - json (for parsing API responses)
+# - os, platform, datetime (system utilities)
+
+# External Requirements:
+# 1. GitHub CLI (gh) - Install separately:
+#    Windows: winget install --id GitHub.cli
+#    macOS: brew install gh
+#    Linux: sudo apt install gh (or sudo dnf install gh)
+#
+# 2. Authentication:
+#    gh auth login (select SSH protocol!)
+#    gh auth refresh -h github.com -s delete_repo
+
 
 # External dependency (not Python):
 # - GitHub CLI (gh) - Install separately:

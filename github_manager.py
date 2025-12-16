@@ -6,13 +6,20 @@ from tkinter import ttk, messagebox
 import subprocess
 import json
 import os
+import platform
 from datetime import datetime
 
-# Set PATH to find gh command
-os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + os.environ.get('PATH', '')
+# Detect operating system and set appropriate paths
+SYSTEM = platform.system()
 
-# Full path to gh command
-GH_PATH = '/opt/homebrew/bin/gh'
+if SYSTEM == 'Windows':
+    # On Windows, gh is typically in PATH or in Program Files
+    GH_PATH = 'gh'  # Windows will find it in PATH
+elif SYSTEM == 'Darwin':  # macOS
+    os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + os.environ.get('PATH', '')
+    GH_PATH = '/opt/homebrew/bin/gh'
+else:  # Linux
+    GH_PATH = 'gh'
 
 class GitHubManager:
     def __init__(self, root):
@@ -95,7 +102,11 @@ class GitHubManager:
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
     
     def _on_mousewheel(self, event):
-        self.canvas.yview_scroll(int(-1 * (event.delta)), "units")
+        # Windows reports delta in multiples of 120
+        if SYSTEM == 'Windows':
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        else:
+            self.canvas.yview_scroll(int(-1 * (event.delta)), "units")
     
     def load_repositories(self):
         # Clear existing items
@@ -209,8 +220,19 @@ class GitHubManager:
                 check=True, capture_output=True
             )
             
-            # Copy to clipboard
-            subprocess.run(['pbcopy'], input=name.encode())
+            # Copy to clipboard (platform-specific)
+            try:
+                if SYSTEM == 'Windows':
+                    subprocess.run(['clip'], input=name.encode(), shell=True)
+                elif SYSTEM == 'Darwin':  # macOS
+                    subprocess.run(['pbcopy'], input=name.encode())
+                else:  # Linux
+                    try:
+                        subprocess.run(['xclip', '-selection', 'clipboard'], input=name.encode())
+                    except FileNotFoundError:
+                        subprocess.run(['xsel', '--clipboard', '--input'], input=name.encode())
+            except Exception:
+                pass  # Clipboard copy is optional
             
             # Clear entry
             self.name_entry.delete(0, tk.END)
@@ -235,9 +257,16 @@ class GitHubManager:
         
         if response:
             try:
+                # Get the authenticated username dynamically
+                username_result = subprocess.run(
+                    [GH_PATH, 'api', 'user', '-q', '.login'],
+                    capture_output=True, text=True, check=True
+                )
+                username = username_result.stdout.strip()
+                
                 # Delete repository
                 subprocess.run(
-                    [GH_PATH, 'repo', 'delete', f'teadock/{name}', '--yes'],
+                    [GH_PATH, 'repo', 'delete', f'{username}/{name}', '--yes'],
                     check=True, capture_output=True
                 )
                 
