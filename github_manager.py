@@ -12,14 +12,38 @@ from datetime import datetime
 # Detect operating system and set appropriate paths
 SYSTEM = platform.system()
 
-if SYSTEM == 'Windows':
-    # On Windows, gh is typically in PATH or in Program Files
-    GH_PATH = 'gh'  # Windows will find it in PATH
-elif SYSTEM == 'Darwin':  # macOS
-    os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + os.environ.get('PATH', '')
-    GH_PATH = '/opt/homebrew/bin/gh'
-else:  # Linux
-    GH_PATH = 'gh'
+def find_gh_path():
+    """Find the GitHub CLI executable path"""
+    if SYSTEM == 'Windows':
+        # Try common Windows locations in order of likelihood
+        possible_paths = [
+            r'C:\Program Files\GitHub CLI\gh.exe',
+            r'C:\Program Files (x86)\GitHub CLI\gh.exe',
+            os.path.expanduser(r'~\AppData\Local\Programs\GitHub CLI\gh.exe'),
+            os.path.expanduser(r'~\scoop\shims\gh.exe'),  # Scoop package manager
+        ]
+        
+        # Check common installation paths first
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        # If not found in common paths, try using 'where' command
+        try:
+            result = subprocess.run(['where', 'gh'], capture_output=True, text=True, shell=True)
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip().split('\n')[0]
+        except:
+            pass
+        
+        return 'gh'  # Fallback
+    elif SYSTEM == 'Darwin':  # macOS
+        os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + os.environ.get('PATH', '')
+        return '/opt/homebrew/bin/gh'
+    else:  # Linux
+        return 'gh'
+
+GH_PATH = find_gh_path()
 
 class GitHubManager:
     def __init__(self, root):
@@ -144,12 +168,28 @@ class GitHubManager:
         info_frame = tk.Frame(item_frame, bg=self.item_bg)
         info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
+        # Name row with copy button
+        name_row = tk.Frame(info_frame, bg=self.item_bg)
+        name_row.pack(fill=tk.X, pady=(0, 5))
+        
         # Name (larger, bold)
-        name_label = tk.Label(info_frame, text=repo['name'],
+        name_label = tk.Label(name_row, text=repo['name'],
                              font=('SF Pro Text', 15, 'bold'),
                              bg=self.item_bg, fg='#1d1d1f',
                              anchor='w')
-        name_label.pack(fill=tk.X, pady=(0, 5))
+        name_label.pack(side=tk.LEFT)
+        
+        # Copy button (small icon next to name)
+        copy_btn = tk.Button(name_row, text="📋",
+                            font=('SF Pro Text', 12),
+                            bg=self.item_bg, fg='#007AFF',
+                            activebackground=self.item_bg,
+                            activeforeground='#0051D5',
+                            relief=tk.FLAT, cursor='hand2',
+                            borderwidth=0,
+                            command=lambda: self.copy_repo_name(repo['name']),
+                            padx=5, pady=0)
+        copy_btn.pack(side=tk.LEFT, padx=(5, 0))
         
         # Details row
         details_frame = tk.Frame(info_frame, bg=self.item_bg)
@@ -199,6 +239,24 @@ class GitHubManager:
                               command=lambda: self.delete_repository(repo['name']),
                               padx=15, pady=5)
         delete_btn.pack(side=tk.RIGHT, padx=(10, 30))
+    
+    def copy_repo_name(self, name):
+        """Copy repository name to clipboard"""
+        try:
+            if SYSTEM == 'Windows':
+                subprocess.run(['clip'], input=name.encode(), shell=True)
+            elif SYSTEM == 'Darwin':  # macOS
+                subprocess.run(['pbcopy'], input=name.encode())
+            else:  # Linux
+                try:
+                    subprocess.run(['xclip', '-selection', 'clipboard'], input=name.encode())
+                except FileNotFoundError:
+                    subprocess.run(['xsel', '--clipboard', '--input'], input=name.encode())
+            
+            # Optional: Show a brief feedback (you could also use a tooltip or status bar)
+            # For now, we'll keep it silent for a clean UX
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to copy to clipboard:\n{str(e)}")
     
     def create_repository(self):
         name = self.name_entry.get().strip()
